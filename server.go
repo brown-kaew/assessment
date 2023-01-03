@@ -9,14 +9,16 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/brown-kaew/assessment/config"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
 )
 
 func main() {
+	config := config.New()
 	fmt.Println("Please use server.go for main file")
-	fmt.Println("start at port:", os.Getenv("PORT"))
+	fmt.Println("start at port:", config.Port)
 
 	e := echo.New()
 	e.Logger.SetLevel(log.INFO)
@@ -28,7 +30,7 @@ func main() {
 	})
 
 	go func() {
-		if err := e.Start(os.Getenv("PORT")); err != nil && err != http.ErrServerClosed { // Start server
+		if err := e.Start(config.Port); err != nil && err != http.ErrServerClosed { // Start server
 			e.Logger.Fatal("shutting down the server")
 		}
 	}()
