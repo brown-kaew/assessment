@@ -7,24 +7,27 @@ import (
 )
 
 type handler struct {
-	Service Service
-}
-
-func (h *handler) InitRoutes(e *echo.Echo) {
-	e.POST("/expenses", createNewExpense)
+	service Service
 }
 
 func NewHandler(s Service) *handler {
 	return &handler{
-		Service: s,
+		service: s,
 	}
 }
 
-func createNewExpense(c echo.Context) error {
-	var expense Expense
-	err := c.Bind(&expense)
-	if err != nil {
-		return err
+func (h *handler) InitRoutes(e *echo.Echo) {
+	e.POST("/expenses", h.createNewExpense())
+}
+
+func (h *handler) createNewExpense() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		var expense Expense
+		err := c.Bind(&expense)
+		if err != nil {
+			return err
+		}
+		h.service.CreateNewExpense(expense)
+		return c.JSON(http.StatusCreated, expense)
 	}
-	return c.JSON(http.StatusCreated, expense)
 }
