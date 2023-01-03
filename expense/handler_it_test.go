@@ -4,6 +4,7 @@ package expense_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -61,9 +62,8 @@ func TestHealth(t *testing.T) {
 	defer teardown()
 
 	// Arrange
-	url := fmt.Sprintf("http://localhost%s/health", config.Port)
-	fmt.Println("Arrange", url)
 	reqBody := ``
+	url := fmt.Sprintf("http://localhost%s/health", config.Port)
 	req, err := http.NewRequest(http.MethodGet, url, strings.NewReader(reqBody))
 	assert.NoError(t, err)
 	client := http.Client{}
@@ -79,5 +79,46 @@ func TestHealth(t *testing.T) {
 	if assert.NoError(t, err) {
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		assert.Equal(t, "\"OK\"\n", string(byteBody))
+	}
+}
+
+func TestCreateNewExpense(t *testing.T) {
+	config, teardown := setUp()
+	defer teardown()
+
+	// Arrange
+	reqBody := `{
+		"title": "strawberry smoothie",
+		"amount": 79,
+		"note": "night market promotion discount 10 bath",
+		"tags": [
+		  "food",
+		  "beverage"
+		]
+	  }`
+	url := fmt.Sprintf("http://localhost%s/expenses", config.Port)
+	req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(reqBody))
+	assert.NoError(t, err)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	client := http.Client{}
+
+	//Act
+	resp, err := client.Do(req)
+	assert.NoError(t, err)
+	byteBody, err := ioutil.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	resp.Body.Close()
+
+	//Assert
+	var expense expense.Expense
+	err = json.Unmarshal(byteBody, &expense)
+	if assert.NoError(t, err) {
+		assert.Equal(t, http.StatusCreated, resp.StatusCode)
+		// assert.Contains(t, strings.TrimSpace(string(byteBody)), `"title":"strawberry smoothie",`)
+		assert.NotEmpty(t, expense.Id)
+		assert.Equal(t, "strawberry smoothie", expense.Title)
+		assert.Equal(t, float64(79), expense.Amount)
+		assert.Equal(t, "night market promotion discount 10 bath", expense.Note)
+		assert.Equal(t, []string{"food", "beverage"}, expense.Tags)
 	}
 }
