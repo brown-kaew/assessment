@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/brown-kaew/assessment/config"
+	"github.com/brown-kaew/assessment/expense"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
@@ -28,6 +29,8 @@ func main() {
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, "OK")
 	})
+
+	expense.SetHandler(e)
 
 	go func() {
 		if err := e.Start(config.Port); err != nil && err != http.ErrServerClosed { // Start server
