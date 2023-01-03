@@ -6,8 +6,18 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func SetHandler(e *echo.Echo) {
+type handler struct {
+	Service Service
+}
+
+func (h *handler) InitRoutes(e *echo.Echo) {
 	e.POST("/expenses", createNewExpense)
+}
+
+func NewHandler(s Service) *handler {
+	return &handler{
+		Service: s,
+	}
 }
 
 func createNewExpense(c echo.Context) error {

@@ -7,8 +7,8 @@ type Config struct {
 	DatabaseUrl string
 }
 
-func New() *Config {
-	return &Config{
+func New() Config {
+	return Config{
 		Port:        os.Getenv("PORT"),
 		DatabaseUrl: os.Getenv("DATABASE_URL"),
 	}

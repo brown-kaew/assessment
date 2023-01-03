@@ -18,6 +18,11 @@ import (
 
 func main() {
 	config := config.New()
+	database, close := expense.InitDB(config)
+	defer close()
+	service := expense.NewService(database)
+	handler := expense.NewHandler(service)
+
 	fmt.Println("Please use server.go for main file")
 	fmt.Println("start at port:", config.Port)
 
@@ -30,7 +35,7 @@ func main() {
 		return c.JSON(http.StatusOK, "OK")
 	})
 
-	expense.SetHandler(e)
+	handler.InitRoutes(e)
 
 	go func() {
 		if err := e.Start(config.Port); err != nil && err != http.ErrServerClosed { // Start server
