@@ -20,8 +20,7 @@ func main() {
 	config := config.New()
 	database, close := expense.InitDB(config)
 	defer close()
-	service := expense.NewService(database)
-	handler := expense.NewHandler(service)
+	handler := expense.NewHandler(database)
 
 	fmt.Println("Please use server.go for main file")
 	fmt.Println("start at port:", config.Port)

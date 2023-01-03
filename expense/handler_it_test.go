@@ -26,8 +26,7 @@ func setUp() (config.Config, func()) {
 	fmt.Println("setUp")
 	config := config.New()
 	database, close := expense.InitDB(config)
-	service := expense.NewService(database)
-	handler := expense.NewHandler(service)
+	handler := expense.NewHandler(database)
 	e := echo.New()
 	go func() {
 		e.GET("/health", func(c echo.Context) error {
