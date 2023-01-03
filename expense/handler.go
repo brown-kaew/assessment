@@ -27,7 +27,10 @@ func (h *handler) createNewExpense() echo.HandlerFunc {
 		if err != nil {
 			return err
 		}
-		h.service.CreateNewExpense(expense)
+		_, err = h.service.CreateNewExpense(&expense)
+		if err != nil {
+			return err
+		}
 		return c.JSON(http.StatusCreated, expense)
 	}
 }
