@@ -223,3 +223,35 @@ func TestCreateNewExpense_ShouldGetInternalServerError(t *testing.T) {
 		assert.Contains(t, strings.TrimSpace(string(byteBody)), `"message":`)
 	}
 }
+
+func TestGetExpenseById_Success(t *testing.T) {
+	config, teardown := setUp()
+	defer teardown()
+
+	// Arrange
+	reqBody := ``
+	url := fmt.Sprintf("http://localhost%s/expenses/1", config.Port)
+	req, err := http.NewRequest(http.MethodGet, url, strings.NewReader(reqBody))
+	assert.NoError(t, err)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	client := http.Client{}
+
+	//Act
+	resp, err := client.Do(req)
+	assert.NoError(t, err)
+	byteBody, err := ioutil.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	resp.Body.Close()
+
+	//Assert
+	var expense expense.Expense
+	err = json.Unmarshal(byteBody, &expense)
+	if assert.NoError(t, err) {
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.NotEmpty(t, expense.Id)
+		assert.Equal(t, "strawberry smoothie", expense.Title)
+		assert.Equal(t, float64(79), expense.Amount)
+		assert.Equal(t, "night market promotion discount 10 bath", expense.Note)
+		assert.Equal(t, []string{"food", "beverage"}, expense.Tags)
+	}
+}
