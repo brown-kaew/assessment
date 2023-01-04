@@ -17,15 +17,14 @@ import (
 )
 
 func main() {
+	banner()
 	config := config.New()
 	database, close := expense.InitDB(config)
 	defer close()
 	handler := expense.NewHandler(database)
 
-	fmt.Println("Please use server.go for main file")
-	fmt.Println("start at port:", config.Port)
-
 	e := echo.New()
+	e.HideBanner = true
 	e.Logger.SetLevel(log.INFO)
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
@@ -52,4 +51,15 @@ func main() {
 	}
 
 	e.Logger.Info("Server stopped")
+}
+
+func banner() {
+	fmt.Println(`
+     ____                              
+    / __/_ __ ___  ___ ___  ___ ___ ___
+   / _/ \ \ // _ \/ -_) _ \(_-</ -_|_-<
+  /___//_\_\/ .__/\__/_//_/___/\__/___/
+           /_/                         
+   Go : software-engineering/assessment
+	`)
 }
