@@ -382,3 +382,44 @@ func TestUpdateExpenseById_Success(t *testing.T) {
 		assert.Equal(t, []string{"food"}, expense.Tags)
 	}
 }
+
+func TestUpdateExpenseById_NoIdIsFound_ShouldGetNotFound(t *testing.T) {
+	config, teardown := setUp()
+	defer teardown()
+
+	// Arrange
+	id := "999"
+	reqBody := `{
+		"title": "MaMa",
+		"amount": 5,
+		"note": "Yummy",
+		"tags": [
+		  "food"
+		]
+	  }`
+	url := fmt.Sprintf("http://localhost%s/expenses/%s", config.Port, id)
+	req, err := http.NewRequest(http.MethodPut, url, strings.NewReader(reqBody))
+	assert.NoError(t, err)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	client := http.Client{}
+
+	//Act
+	resp, err := client.Do(req)
+	assert.NoError(t, err)
+	byteBody, err := ioutil.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	resp.Body.Close()
+
+	//Assert
+	var expense expense.Expense
+	err = json.Unmarshal(byteBody, &expense)
+	if assert.NoError(t, err) {
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+		assert.Contains(t, strings.TrimSpace(string(byteBody)), `"message":"Expense not found"`)
+		assert.Empty(t, expense.Id)
+		assert.Empty(t, expense.Title)
+		assert.Empty(t, expense.Amount)
+		assert.Empty(t, expense.Note)
+		assert.Empty(t, expense.Tags)
+	}
+}
