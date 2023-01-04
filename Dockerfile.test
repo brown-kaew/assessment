@@ -1,0 +1,7 @@
+FROM golang:1.19-alpine
+
+# Set working directory
+WORKDIR /go/src/target
+
+# Run tests
+CMD CGO_ENABLED=0 DATABASE_URL=postgresql://root:root@db/sanbox-db?sslmode=disable PORT=:2565 go test --tags=integration ./...
