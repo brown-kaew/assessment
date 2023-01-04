@@ -257,8 +257,9 @@ func TestGetExpenseById_Success(t *testing.T) {
 	defer teardown()
 
 	// Arrange
+	id := seedExpenses(t, config)
 	reqBody := ``
-	url := fmt.Sprintf("http://localhost%s/expenses/1", config.Port)
+	url := fmt.Sprintf("http://localhost%s/expenses/%s", config.Port, id)
 	req, err := http.NewRequest(http.MethodGet, url, strings.NewReader(reqBody))
 	assert.NoError(t, err)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
