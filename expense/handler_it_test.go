@@ -37,16 +37,7 @@ func setUp() (config.Config, func()) {
 		e.Start(config.Port)
 	}()
 
-	for {
-		conn, err := net.DialTimeout("tcp", config.Port, 30*time.Second)
-		if err != nil {
-			log.Println(err)
-		}
-		if conn != nil {
-			conn.Close()
-			break
-		}
-	}
+	checkServerReadiness(config)
 
 	return config, func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -72,8 +63,19 @@ func setUpNoDB() (config.Config, func()) {
 		e.Start(config.Port)
 	}()
 
+	checkServerReadiness(config)
+
+	return config, func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		e.Shutdown(ctx)
+		close()
+	}
+}
+
+func checkServerReadiness(config config.Config) {
 	for {
-		conn, err := net.DialTimeout("tcp", config.Port, 30*time.Second)
+		conn, err := net.DialTimeout("tcp", fmt.Sprintf("localhost%s", config.Port), 30*time.Second)
 		if err != nil {
 			log.Println(err)
 		}
@@ -81,13 +83,6 @@ func setUpNoDB() (config.Config, func()) {
 			conn.Close()
 			break
 		}
-	}
-
-	return config, func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		e.Shutdown(ctx)
-		close()
 	}
 }
 
