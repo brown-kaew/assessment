@@ -148,7 +148,6 @@ func TestCreateNewExpense_Success(t *testing.T) {
 	err = json.Unmarshal(byteBody, &expense)
 	if assert.NoError(t, err) {
 		assert.Equal(t, http.StatusCreated, resp.StatusCode)
-		// assert.Contains(t, strings.TrimSpace(string(byteBody)), `"title":"strawberry smoothie",`)
 		assert.NotEmpty(t, expense.Id)
 		assert.Equal(t, "strawberry smoothie", expense.Title)
 		assert.Equal(t, float64(79), expense.Amount)
