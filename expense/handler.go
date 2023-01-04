@@ -36,7 +36,7 @@ func (h *handler) createNewExpenseHandler() echo.HandlerFunc {
 		var expense Expense
 		err := c.Bind(&expense)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+			return echo.NewHTTPError(http.StatusBadRequest, err)
 		}
 		err = h.CreateNewExpense(&expense)
 		if err != nil {
@@ -62,7 +62,7 @@ func (h *handler) updateExpenseHandler() echo.HandlerFunc {
 		var expense Expense
 		err := c.Bind(&expense)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+			return echo.NewHTTPError(http.StatusBadRequest, err)
 		}
 		expense.Id = c.Param("id")
 

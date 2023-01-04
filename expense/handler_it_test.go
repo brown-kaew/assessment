@@ -209,7 +209,7 @@ func TestCreateNewExpense_InvalidJsonRequest_ShouldGetBadRequest(t *testing.T) {
 	//Assert
 	if assert.NoError(t, err) {
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-		assert.Contains(t, strings.TrimSpace(string(byteBody)), `"message":`)
+		assert.Contains(t, strings.TrimSpace(string(byteBody)), `"message":"Unmarshal type error`)
 	}
 }
 
@@ -243,7 +243,7 @@ func TestCreateNewExpense_NoDbConn_ShouldGetInternalServerError(t *testing.T) {
 	//Assert
 	if assert.NoError(t, err) {
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-		assert.Contains(t, strings.TrimSpace(string(byteBody)), `"message":`)
+		assert.Contains(t, strings.TrimSpace(string(byteBody)), `"message":"Internal Server Error"`)
 	}
 }
 
@@ -305,6 +305,7 @@ func TestGetExpenseById_NoIdIsFound_ShouldGetNotFound(t *testing.T) {
 	err = json.Unmarshal(byteBody, &expense)
 	if assert.NoError(t, err) {
 		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+		assert.Contains(t, strings.TrimSpace(string(byteBody)), `"message":"Expense not found"`)
 		assert.Empty(t, expense.Id)
 		assert.Empty(t, expense.Title)
 		assert.Empty(t, expense.Amount)
@@ -335,7 +336,7 @@ func TestGetExpenseById_NoDbConn_ShouldGetInternalServerError(t *testing.T) {
 	//Assert
 	if assert.NoError(t, err) {
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-		assert.Contains(t, strings.TrimSpace(string(byteBody)), `"message":`)
+		assert.Contains(t, strings.TrimSpace(string(byteBody)), `"message":"Cannot prepare statment"`)
 	}
 }
 
