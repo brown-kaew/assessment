@@ -285,8 +285,9 @@ func TestGetExpenseById_NoIdIsFound_ShouldGetNotFound(t *testing.T) {
 	defer teardown()
 
 	// Arrange
+	id := "999"
 	reqBody := ``
-	url := fmt.Sprintf("http://localhost%s/expenses/notfound", config.Port)
+	url := fmt.Sprintf("http://localhost%s/expenses/%s", config.Port, id)
 	req, err := http.NewRequest(http.MethodGet, url, strings.NewReader(reqBody))
 	assert.NoError(t, err)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)

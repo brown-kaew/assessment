@@ -97,12 +97,12 @@ func (h *handler) GetExpenseById(id string) (*Expense, error) {
 	}
 
 	row := stmt.QueryRow(id)
-	if row.Err() != nil {
-		return nil, echo.NewHTTPError(http.StatusNotFound, "Expense not found")
-	}
 
 	var expense Expense
 	err = row.Scan(&expense.Id, &expense.Title, &expense.Amount, &expense.Note, pq.Array(&expense.Tags))
+	if err == sql.ErrNoRows {
+		return nil, echo.NewHTTPError(http.StatusNotFound, "Expense not found")
+	}
 	if err != nil {
 		return nil, err
 	}
