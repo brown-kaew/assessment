@@ -4,9 +4,11 @@ package expense
 
 import (
 	"database/sql"
+	"database/sql/driver"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -68,6 +70,38 @@ func TestGetExpenseById(t *testing.T) {
 	assert.Equal(t, expectId, e.Id)
 	assert.Equal(t, "strawberry smoothie", e.Title)
 	assert.Equal(t, float64(79), e.Amount)
+	assert.Equal(t, "night market promotion discount 10 bath", e.Note)
+	assert.Equal(t, []string{"food", "beverage"}, e.Tags)
+}
+
+func TestUpdateExpenseById(t *testing.T) {
+	db, mock, teardown := setUp(t)
+	defer teardown()
+
+	// Arrange
+	expectId := "1"
+	e := &Expense{
+		Id:     expectId,
+		Title:  "strawberry smoothie",
+		Amount: 88,
+		Note:   "night market promotion discount 10 bath",
+		Tags:   []string{"food", "beverage"},
+	}
+	mock.ExpectPrepare("UPDATE expenses.*").ExpectExec().
+		WithArgs(expectId, e.Title, e.Amount, e.Note, pq.Array(&e.Tags)).
+		WillReturnResult(driver.RowsAffected(1))
+	handler := NewHandler(db)
+
+	// Act
+	err := handler.UpdateExpenseById(e)
+
+	// Assert
+	assert.NoError(t, err)
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
+	assert.Equal(t, expectId, e.Id)
+	assert.Equal(t, "strawberry smoothie", e.Title)
+	assert.Equal(t, float64(88), e.Amount)
 	assert.Equal(t, "night market promotion discount 10 bath", e.Note)
 	assert.Equal(t, []string{"food", "beverage"}, e.Tags)
 }
