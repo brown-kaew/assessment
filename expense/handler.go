@@ -34,7 +34,7 @@ func (h *handler) createNewExpenseHandler() echo.HandlerFunc {
 		var expense Expense
 		err := c.Bind(&expense)
 		if err != nil {
-			return err
+			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 		err = h.CreateNewExpense(&expense)
 		if err != nil {
@@ -74,9 +74,13 @@ func (h *handler) CreateNewExpense(expense *Expense) error {
 func (h *handler) GetExpenseById(id string) (*Expense, error) {
 	stmt, err := h.db.Prepare("SELECT * FROM expenses WHERE id=$1")
 	if err != nil {
-		return nil, err
+		return nil, echo.NewHTTPError(http.StatusInternalServerError, "Cannot prepare statment")
 	}
+
 	row := stmt.QueryRow(id)
+	if row.Err() != nil {
+		return nil, echo.NewHTTPError(http.StatusNotFound, "Expense not found")
+	}
 
 	var e Expense
 	err = row.Scan(&e.Id, &e.Title, &e.Amount, &e.Note, pq.Array(&e.Tags))
