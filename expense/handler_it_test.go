@@ -56,6 +56,41 @@ func setUp() (config.Config, func()) {
 	}
 }
 
+func setUpNoDB() (config.Config, func()) {
+	fmt.Println("setUp")
+	config := config.New()
+	database, close := expense.InitDB(config)
+	defer close() //close DB after every thing is set
+	handler := expense.NewHandler(database)
+	e := echo.New()
+	go func() {
+		e.GET("/health", func(c echo.Context) error {
+			return c.JSON(http.StatusOK, "OK")
+		})
+
+		handler.InitRoutes(e)
+		e.Start(config.Port)
+	}()
+
+	for {
+		conn, err := net.DialTimeout("tcp", config.Port, 30*time.Second)
+		if err != nil {
+			log.Println(err)
+		}
+		if conn != nil {
+			conn.Close()
+			break
+		}
+	}
+
+	return config, func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		e.Shutdown(ctx)
+		close()
+	}
+}
+
 func TestHealth(t *testing.T) {
 	config, teardown := setUp()
 	defer teardown()
@@ -152,6 +187,40 @@ func TestCreateNewExpense_InvalidJsonRequest_ShouldGetBadRequest(t *testing.T) {
 	//Assert
 	if assert.NoError(t, err) {
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-		assert.Contains(t, strings.TrimSpace(string(byteBody)), `"title":"strawberry smoothie",`)
+		assert.Contains(t, strings.TrimSpace(string(byteBody)), `"message":`)
+	}
+}
+
+func TestCreateNewExpense_ShouldGetInternalServerError(t *testing.T) {
+	config, teardown := setUpNoDB()
+	defer teardown()
+
+	// Arrange
+	reqBody := `{
+		"title": "strawberry smoothie",
+		"amount": 79,
+		"note": "night market promotion discount 10 bath",
+		"tags": [
+		  "food",
+		  "beverage"
+		]
+	  }`
+	url := fmt.Sprintf("http://localhost%s/expenses", config.Port)
+	req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(reqBody))
+	assert.NoError(t, err)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	client := http.Client{}
+
+	//Act
+	resp, err := client.Do(req)
+	assert.NoError(t, err)
+	byteBody, err := ioutil.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	resp.Body.Close()
+
+	//Assert
+	if assert.NoError(t, err) {
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+		assert.Contains(t, strings.TrimSpace(string(byteBody)), `"message":`)
 	}
 }
