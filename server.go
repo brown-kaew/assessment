@@ -28,13 +28,13 @@ func main() {
 	e.Logger.SetLevel(log.INFO)
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	e.Use(config.HardCodeAuth)
 
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, "OK")
 	})
-
-	handler.InitRoutes(e)
+	g := e.Group("")
+	g.Use(config.HardCodeAuth)
+	handler.InitRoutes(g)
 
 	go func() {
 		if err := e.Start(conf.Port); err != nil && err != http.ErrServerClosed { // Start server

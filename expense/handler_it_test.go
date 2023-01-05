@@ -24,22 +24,15 @@ import (
 
 func setUp() (config.Config, func()) {
 	fmt.Println("setUp")
-	config := config.New()
-	database, close := expense.InitDB(config)
+	conf := config.New()
+	database, close := expense.InitDB(conf)
 	handler := expense.NewHandler(database)
 	e := echo.New()
-	go func() {
-		e.GET("/health", func(c echo.Context) error {
-			return c.JSON(http.StatusOK, "OK")
-		})
 
-		handler.InitRoutes(e)
-		e.Start(config.Port)
-	}()
+	go startServer(e, conf, handler)
+	checkServerReadiness(conf)
 
-	checkServerReadiness(config)
-
-	return config, func() {
+	return conf, func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		e.Shutdown(ctx)
@@ -48,29 +41,34 @@ func setUp() (config.Config, func()) {
 }
 
 func setUpNoDB() (config.Config, func()) {
-	fmt.Println("setUp")
-	config := config.New()
-	database, close := expense.InitDB(config)
+	fmt.Println("setUpNoDB")
+	conf := config.New()
+	database, close := expense.InitDB(conf)
 	defer close() //close DB after every thing is set
 	handler := expense.NewHandler(database)
 	e := echo.New()
-	go func() {
-		e.GET("/health", func(c echo.Context) error {
-			return c.JSON(http.StatusOK, "OK")
-		})
 
-		handler.InitRoutes(e)
-		e.Start(config.Port)
-	}()
+	go startServer(e, conf, handler)
+	checkServerReadiness(conf)
 
-	checkServerReadiness(config)
-
-	return config, func() {
+	return conf, func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		e.Shutdown(ctx)
 		close()
 	}
+}
+
+func startServer(e *echo.Echo, conf config.Config, handler expense.Handler) {
+	e.GET("/health", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, "OK")
+	})
+
+	g := e.Group("")
+	g.Use(config.HardCodeAuth)
+	handler.InitRoutes(g)
+
+	e.Start(conf.Port)
 }
 
 func checkServerReadiness(config config.Config) {
@@ -100,6 +98,7 @@ func seedExpenses(t *testing.T, config config.Config) int {
 	req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(reqBody))
 	assert.NoError(t, err)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, "November 10, 2009")
 	client := http.Client{}
 
 	resp, err := client.Do(req)
@@ -158,6 +157,7 @@ func TestCreateNewExpense_Success(t *testing.T) {
 	req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(reqBody))
 	assert.NoError(t, err)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, "November 10, 2009")
 	client := http.Client{}
 
 	// Act
@@ -198,6 +198,7 @@ func TestCreateNewExpense_InvalidJsonRequest_ShouldGetBadRequest(t *testing.T) {
 	req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(reqBody))
 	assert.NoError(t, err)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, "November 10, 2009")
 	client := http.Client{}
 
 	// Act
@@ -232,6 +233,7 @@ func TestCreateNewExpense_NoDbConn_ShouldGetInternalServerError(t *testing.T) {
 	req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(reqBody))
 	assert.NoError(t, err)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, "November 10, 2009")
 	client := http.Client{}
 
 	// Act
@@ -259,6 +261,7 @@ func TestGetExpenseById_Success(t *testing.T) {
 	req, err := http.NewRequest(http.MethodGet, url, strings.NewReader(reqBody))
 	assert.NoError(t, err)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, "November 10, 2009")
 	client := http.Client{}
 
 	// Act
@@ -292,6 +295,7 @@ func TestGetExpenseById_NoIdIsFound_ShouldGetNotFound(t *testing.T) {
 	req, err := http.NewRequest(http.MethodGet, url, strings.NewReader(reqBody))
 	assert.NoError(t, err)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, "November 10, 2009")
 	client := http.Client{}
 
 	// Act
@@ -325,6 +329,7 @@ func TestGetExpenseById_NoDbConn_ShouldGetInternalServerError(t *testing.T) {
 	req, err := http.NewRequest(http.MethodGet, url, strings.NewReader(reqBody))
 	assert.NoError(t, err)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, "November 10, 2009")
 	client := http.Client{}
 
 	// Act
@@ -359,6 +364,7 @@ func TestUpdateExpenseById_Success(t *testing.T) {
 	req, err := http.NewRequest(http.MethodPut, url, strings.NewReader(reqBody))
 	assert.NoError(t, err)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, "November 10, 2009")
 	client := http.Client{}
 
 	// Act
@@ -399,6 +405,7 @@ func TestUpdateExpenseById_NoIdIsFound_ShouldGetNotFound(t *testing.T) {
 	req, err := http.NewRequest(http.MethodPut, url, strings.NewReader(reqBody))
 	assert.NoError(t, err)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, "November 10, 2009")
 	client := http.Client{}
 
 	// Act
@@ -434,6 +441,7 @@ func TestGetAllExpenses_Success(t *testing.T) {
 	req, err := http.NewRequest(http.MethodGet, url, strings.NewReader(reqBody))
 	assert.NoError(t, err)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, "November 10, 2009")
 	client := http.Client{}
 
 	// Act
@@ -464,6 +472,7 @@ func TestGetAllExpenses_NoDbConn_ShouldGetInternalServerError(t *testing.T) {
 	req, err := http.NewRequest(http.MethodGet, url, strings.NewReader(reqBody))
 	assert.NoError(t, err)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, "November 10, 2009")
 	client := http.Client{}
 
 	// Act
