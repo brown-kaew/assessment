@@ -3,6 +3,7 @@ package expense
 import (
 	"database/sql"
 	"net/http"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 	"github.com/lib/pq"
@@ -11,7 +12,7 @@ import (
 type Handler interface {
 	InitRoutes(e *echo.Echo)
 	CreateNewExpense(expense *Expense) error
-	GetExpenseById(id string) (*Expense, error)
+	GetExpenseById(id int) (*Expense, error)
 	UpdateExpenseById(expense *Expense) error
 	GetAllExpenses() ([]Expense, error)
 }
@@ -50,7 +51,10 @@ func (h *handler) createNewExpenseHandler() echo.HandlerFunc {
 
 func (h *handler) getExpenseHandler() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		id := c.Param("id")
+		id, err := strconv.Atoi(c.Param("id"))
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "invalid Id")
+		}
 		expense, err := h.GetExpenseById(id)
 		if err != nil {
 			return err
@@ -66,7 +70,10 @@ func (h *handler) updateExpenseHandler() echo.HandlerFunc {
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, err)
 		}
-		expense.Id = c.Param("id")
+		expense.Id, err = strconv.Atoi(c.Param("id"))
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "invalid Id")
+		}
 
 		err = h.UpdateExpenseById(&expense)
 		if err != nil {
@@ -102,7 +109,7 @@ func (h *handler) CreateNewExpense(expense *Expense) error {
 	return nil
 }
 
-func (h *handler) GetExpenseById(id string) (*Expense, error) {
+func (h *handler) GetExpenseById(id int) (*Expense, error) {
 	stmt, err := h.db.Prepare("SELECT * FROM expenses WHERE id=$1")
 	if err != nil {
 		return nil, echo.NewHTTPError(http.StatusInternalServerError, "Cannot prepare statment")

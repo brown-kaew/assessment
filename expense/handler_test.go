@@ -25,7 +25,7 @@ func TestCreateNewExpense(t *testing.T) {
 	defer teardown()
 
 	// Arrange
-	expectId := "1"
+	expectId := 1
 	mock.ExpectQuery("INSERT INTO expenses").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(expectId))
 	e := &Expense{
 		Title:  "strawberry smoothie",
@@ -54,7 +54,7 @@ func TestGetExpenseById(t *testing.T) {
 	defer teardown()
 
 	// Arrange
-	expectId := "1"
+	expectId := 1
 	mock.ExpectPrepare("SELECT \\* FROM expenses.*").ExpectQuery().WithArgs(expectId).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "title", "amount", "note", "tags"}).
 			AddRow(expectId, "strawberry smoothie", "79", "night market promotion discount 10 bath", `{"food","beverage"}`))
@@ -79,7 +79,7 @@ func TestUpdateExpenseById(t *testing.T) {
 	defer teardown()
 
 	// Arrange
-	expectId := "1"
+	expectId := 1
 	e := &Expense{
 		Id:     expectId,
 		Title:  "strawberry smoothie",
@@ -126,13 +126,13 @@ func TestGetAllExpenses(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(expenses))
 	e := expenses[0]
-	assert.Equal(t, "1", e.Id)
+	assert.Equal(t, 1, e.Id)
 	assert.Equal(t, "strawberry smoothie", e.Title)
 	assert.Equal(t, float64(79), e.Amount)
 	assert.Equal(t, "night market promotion discount 10 bath", e.Note)
 	assert.Equal(t, []string{"food", "beverage"}, e.Tags)
 	e = expenses[1]
-	assert.Equal(t, "2", e.Id)
+	assert.Equal(t, 2, e.Id)
 	assert.Equal(t, "MaMa", e.Title)
 	assert.Equal(t, float64(5), e.Amount)
 	assert.Equal(t, "No money", e.Note)
