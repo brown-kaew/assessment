@@ -13,6 +13,7 @@ type Handler interface {
 	CreateNewExpense(expense *Expense) error
 	GetExpenseById(id string) (*Expense, error)
 	UpdateExpenseById(expense *Expense) error
+	GetAllExpenses() ([]Expense, error)
 }
 
 type handler struct {
@@ -29,6 +30,7 @@ func (h *handler) InitRoutes(e *echo.Echo) {
 	e.POST("/expenses", h.createNewExpenseHandler())
 	e.GET("/expenses/:id", h.getExpenseHandler())
 	e.PUT("/expenses/:id", h.updateExpenseHandler())
+	e.GET("/expenses", h.getAllExpenseHandler())
 }
 
 func (h *handler) createNewExpenseHandler() echo.HandlerFunc {
@@ -67,6 +69,16 @@ func (h *handler) updateExpenseHandler() echo.HandlerFunc {
 		expense.Id = c.Param("id")
 
 		err = h.UpdateExpenseById(&expense)
+		if err != nil {
+			return err
+		}
+		return c.JSON(http.StatusOK, expense)
+	}
+}
+
+func (h *handler) getAllExpenseHandler() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		expense, err := h.GetAllExpenses()
 		if err != nil {
 			return err
 		}
@@ -137,4 +149,27 @@ func (h *handler) UpdateExpenseById(expense *Expense) error {
 		return echo.NewHTTPError(http.StatusNotFound, "Expense not found")
 	}
 	return nil
+}
+
+func (h *handler) GetAllExpenses() ([]Expense, error) {
+	stmt, err := h.db.Prepare("SELECT * FROM expenses")
+	if err != nil {
+		return nil, echo.NewHTTPError(http.StatusInternalServerError, "Cannot prepare statment")
+	}
+
+	rows, err := stmt.Query()
+	if err != nil {
+		return nil, echo.NewHTTPError(http.StatusInternalServerError, "Can't query all expenses: "+err.Error())
+	}
+
+	var expenses []Expense
+	for rows.Next() {
+		var expense Expense
+		err = rows.Scan(&expense.Id, &expense.Title, &expense.Amount, &expense.Note, pq.Array(&expense.Tags))
+		if err != nil {
+			return nil, echo.NewHTTPError(http.StatusInternalServerError, "Can't scan expense: "+err.Error())
+		}
+		expenses = append(expenses, expense)
+	}
+	return expenses, nil
 }

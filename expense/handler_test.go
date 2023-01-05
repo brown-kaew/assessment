@@ -105,3 +105,36 @@ func TestUpdateExpenseById(t *testing.T) {
 	assert.Equal(t, "night market promotion discount 10 bath", e.Note)
 	assert.Equal(t, []string{"food", "beverage"}, e.Tags)
 }
+
+func TestGetAllExpenses(t *testing.T) {
+	db, mock, teardown := setUp(t)
+	defer teardown()
+
+	// Arrange
+	mock.ExpectPrepare("SELECT \\* FROM expenses.*").ExpectQuery().
+		WillReturnRows(sqlmock.NewRows([]string{"id", "title", "amount", "note", "tags"}).
+			AddRow("1", "strawberry smoothie", "79", "night market promotion discount 10 bath", `{"food","beverage"}`).
+			AddRow("2", "MaMa", "5", "No money", `{"food"}`))
+	handler := NewHandler(db)
+
+	// Act
+	expenses, err := handler.GetAllExpenses()
+
+	// Assert
+	assert.NoError(t, err)
+	err = mock.ExpectationsWereMet()
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(expenses))
+	e := expenses[0]
+	assert.Equal(t, "1", e.Id)
+	assert.Equal(t, "strawberry smoothie", e.Title)
+	assert.Equal(t, float64(79), e.Amount)
+	assert.Equal(t, "night market promotion discount 10 bath", e.Note)
+	assert.Equal(t, []string{"food", "beverage"}, e.Tags)
+	e = expenses[1]
+	assert.Equal(t, "2", e.Id)
+	assert.Equal(t, "MaMa", e.Title)
+	assert.Equal(t, float64(5), e.Amount)
+	assert.Equal(t, "No money", e.Note)
+	assert.Equal(t, []string{"food"}, e.Tags)
+}
