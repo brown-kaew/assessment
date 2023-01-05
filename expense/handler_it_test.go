@@ -22,6 +22,10 @@ import (
 	"github.com/brown-kaew/assessment/expense"
 )
 
+const (
+	AUTH_SUCCESS = "November 10, 2009"
+)
+
 func setUp() (config.Config, func()) {
 	fmt.Println("setUp")
 	conf := config.New()
@@ -98,7 +102,7 @@ func seedExpenses(t *testing.T, config config.Config) int {
 	req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(reqBody))
 	assert.NoError(t, err)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, "November 10, 2009")
+	req.Header.Set(echo.HeaderAuthorization, AUTH_SUCCESS)
 	client := http.Client{}
 
 	resp, err := client.Do(req)
@@ -157,7 +161,7 @@ func TestCreateNewExpense_Success(t *testing.T) {
 	req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(reqBody))
 	assert.NoError(t, err)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, "November 10, 2009")
+	req.Header.Set(echo.HeaderAuthorization, AUTH_SUCCESS)
 	client := http.Client{}
 
 	// Act
@@ -198,7 +202,7 @@ func TestCreateNewExpense_InvalidJsonRequest_ShouldGetBadRequest(t *testing.T) {
 	req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(reqBody))
 	assert.NoError(t, err)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, "November 10, 2009")
+	req.Header.Set(echo.HeaderAuthorization, AUTH_SUCCESS)
 	client := http.Client{}
 
 	// Act
@@ -233,7 +237,7 @@ func TestCreateNewExpense_NoDbConn_ShouldGetInternalServerError(t *testing.T) {
 	req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(reqBody))
 	assert.NoError(t, err)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, "November 10, 2009")
+	req.Header.Set(echo.HeaderAuthorization, AUTH_SUCCESS)
 	client := http.Client{}
 
 	// Act
@@ -250,6 +254,41 @@ func TestCreateNewExpense_NoDbConn_ShouldGetInternalServerError(t *testing.T) {
 	}
 }
 
+func TestCreateNewExpense_InvalidAuth_ShouldGetUnauthorizedError(t *testing.T) {
+	config, teardown := setUpNoDB()
+	defer teardown()
+
+	// Arrange
+	reqBody := `{
+		"title": "strawberry smoothie",
+		"amount": 79,
+		"note": "night market promotion discount 10 bath",
+		"tags": [
+		  "food",
+		  "beverage"
+		]
+	  }`
+	url := fmt.Sprintf("http://localhost%s/expenses", config.Port)
+	req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(reqBody))
+	assert.NoError(t, err)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, "auth-fail")
+	client := http.Client{}
+
+	// Act
+	resp, err := client.Do(req)
+	assert.NoError(t, err)
+	byteBody, err := ioutil.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	resp.Body.Close()
+
+	// Assert
+	if assert.NoError(t, err) {
+		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		assert.Contains(t, strings.TrimSpace(string(byteBody)), `"message":"Unauthorized"`)
+	}
+}
+
 func TestGetExpenseById_Success(t *testing.T) {
 	config, teardown := setUp()
 	defer teardown()
@@ -261,7 +300,7 @@ func TestGetExpenseById_Success(t *testing.T) {
 	req, err := http.NewRequest(http.MethodGet, url, strings.NewReader(reqBody))
 	assert.NoError(t, err)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, "November 10, 2009")
+	req.Header.Set(echo.HeaderAuthorization, AUTH_SUCCESS)
 	client := http.Client{}
 
 	// Act
@@ -295,7 +334,7 @@ func TestGetExpenseById_NoIdIsFound_ShouldGetNotFound(t *testing.T) {
 	req, err := http.NewRequest(http.MethodGet, url, strings.NewReader(reqBody))
 	assert.NoError(t, err)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, "November 10, 2009")
+	req.Header.Set(echo.HeaderAuthorization, AUTH_SUCCESS)
 	client := http.Client{}
 
 	// Act
@@ -329,7 +368,7 @@ func TestGetExpenseById_NoDbConn_ShouldGetInternalServerError(t *testing.T) {
 	req, err := http.NewRequest(http.MethodGet, url, strings.NewReader(reqBody))
 	assert.NoError(t, err)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, "November 10, 2009")
+	req.Header.Set(echo.HeaderAuthorization, AUTH_SUCCESS)
 	client := http.Client{}
 
 	// Act
@@ -364,7 +403,7 @@ func TestUpdateExpenseById_Success(t *testing.T) {
 	req, err := http.NewRequest(http.MethodPut, url, strings.NewReader(reqBody))
 	assert.NoError(t, err)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, "November 10, 2009")
+	req.Header.Set(echo.HeaderAuthorization, AUTH_SUCCESS)
 	client := http.Client{}
 
 	// Act
@@ -405,7 +444,7 @@ func TestUpdateExpenseById_NoIdIsFound_ShouldGetNotFound(t *testing.T) {
 	req, err := http.NewRequest(http.MethodPut, url, strings.NewReader(reqBody))
 	assert.NoError(t, err)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, "November 10, 2009")
+	req.Header.Set(echo.HeaderAuthorization, AUTH_SUCCESS)
 	client := http.Client{}
 
 	// Act
@@ -441,7 +480,7 @@ func TestGetAllExpenses_Success(t *testing.T) {
 	req, err := http.NewRequest(http.MethodGet, url, strings.NewReader(reqBody))
 	assert.NoError(t, err)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, "November 10, 2009")
+	req.Header.Set(echo.HeaderAuthorization, AUTH_SUCCESS)
 	client := http.Client{}
 
 	// Act
@@ -472,7 +511,7 @@ func TestGetAllExpenses_NoDbConn_ShouldGetInternalServerError(t *testing.T) {
 	req, err := http.NewRequest(http.MethodGet, url, strings.NewReader(reqBody))
 	assert.NoError(t, err)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, "November 10, 2009")
+	req.Header.Set(echo.HeaderAuthorization, AUTH_SUCCESS)
 	client := http.Client{}
 
 	// Act
