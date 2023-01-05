@@ -20,3 +20,7 @@ docker-run:
 	docker run -e DATABASE_URL -e PORT -p 2565:2565 assessment:app
 
 docker-build-run: docker-build docker-run
+
+# brew install newman
+test-postman:
+	newman run expenses.postman_collection.json
