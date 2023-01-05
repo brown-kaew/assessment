@@ -3,6 +3,7 @@ version: '3.2'
 networks:
   integration-assessment:
 
+
 services:
   it_tests:
     build:
@@ -14,6 +15,7 @@ services:
       - db
     networks:
       - integration-assessment
+
   db:
     image: postgres:12.12
     environment:
@@ -25,4 +27,3 @@ services:
     #   - ./db:/docker-entrypoint-initdb.d/
     networks:
       - integration-assessment
-    
