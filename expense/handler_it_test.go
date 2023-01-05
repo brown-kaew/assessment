@@ -420,3 +420,62 @@ func TestUpdateExpenseById_NoIdIsFound_ShouldGetNotFound(t *testing.T) {
 		assert.Empty(t, expense.Tags)
 	}
 }
+
+func TestGetAllExpenses_Success(t *testing.T) {
+	config, teardown := setUp()
+	defer teardown()
+
+	// Arrange
+	seedExpenses(t, config)
+	seedExpenses(t, config)
+	reqBody := ``
+	url := fmt.Sprintf("http://localhost%s/expenses", config.Port)
+	req, err := http.NewRequest(http.MethodGet, url, strings.NewReader(reqBody))
+	assert.NoError(t, err)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	client := http.Client{}
+
+	//Act
+	resp, err := client.Do(req)
+	assert.NoError(t, err)
+	byteBody, err := ioutil.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	resp.Body.Close()
+
+	//Assert
+	var expenses []expense.Expense
+	err = json.Unmarshal(byteBody, &expenses)
+	if assert.NoError(t, err) {
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.True(t, len(expenses) >= 2)
+	}
+}
+
+func TestGetAllExpenses_NoDbConn_ShouldGetInternalServerError(t *testing.T) {
+	config, teardown := setUpNoDB()
+	defer teardown()
+
+	// Arrange
+	seedExpenses(t, config)
+	seedExpenses(t, config)
+	reqBody := ``
+	url := fmt.Sprintf("http://localhost%s/expenses", config.Port)
+	req, err := http.NewRequest(http.MethodGet, url, strings.NewReader(reqBody))
+	assert.NoError(t, err)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	client := http.Client{}
+
+	//Act
+	resp, err := client.Do(req)
+	assert.NoError(t, err)
+	byteBody, err := ioutil.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	resp.Body.Close()
+
+	//Assert
+	//Assert
+	if assert.NoError(t, err) {
+		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+		assert.Contains(t, strings.TrimSpace(string(byteBody)), `"message":"Cannot prepare statment"`)
+	}
+}
