@@ -18,8 +18,8 @@ import (
 
 func main() {
 	banner()
-	config := config.New()
-	database, close := expense.InitDB(config)
+	conf := config.New()
+	database, close := expense.InitDB(conf)
 	defer close()
 	handler := expense.NewHandler(database)
 
@@ -32,11 +32,12 @@ func main() {
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, "OK")
 	})
-
-	handler.InitRoutes(e)
+	g := e.Group("")
+	g.Use(config.HardCodeAuth)
+	handler.InitRoutes(g)
 
 	go func() {
-		if err := e.Start(config.Port); err != nil && err != http.ErrServerClosed { // Start server
+		if err := e.Start(conf.Port); err != nil && err != http.ErrServerClosed { // Start server
 			e.Logger.Fatal("shutting down the server")
 		}
 	}()

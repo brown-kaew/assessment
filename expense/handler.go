@@ -10,7 +10,7 @@ import (
 )
 
 type Handler interface {
-	InitRoutes(e *echo.Echo)
+	InitRoutes(e *echo.Group)
 	CreateNewExpense(expense *Expense) error
 	GetExpenseById(id int) (*Expense, error)
 	UpdateExpenseById(expense *Expense) error
@@ -27,11 +27,11 @@ func NewHandler(db *sql.DB) Handler {
 	}
 }
 
-func (h *handler) InitRoutes(e *echo.Echo) {
-	e.POST("/expenses", h.createNewExpenseHandler())
-	e.GET("/expenses/:id", h.getExpenseHandler())
-	e.PUT("/expenses/:id", h.updateExpenseHandler())
-	e.GET("/expenses", h.getAllExpenseHandler())
+func (h *handler) InitRoutes(g *echo.Group) {
+	g.POST("/expenses", h.createNewExpenseHandler())
+	g.GET("/expenses/:id", h.getExpenseHandler())
+	g.PUT("/expenses/:id", h.updateExpenseHandler())
+	g.GET("/expenses", h.getAllExpenseHandler())
 }
 
 func (h *handler) createNewExpenseHandler() echo.HandlerFunc {
