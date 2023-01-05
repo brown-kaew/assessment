@@ -18,8 +18,8 @@ import (
 
 func main() {
 	banner()
-	config := config.New()
-	database, close := expense.InitDB(config)
+	conf := config.New()
+	database, close := expense.InitDB(conf)
 	defer close()
 	handler := expense.NewHandler(database)
 
@@ -28,6 +28,7 @@ func main() {
 	e.Logger.SetLevel(log.INFO)
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	e.Use(config.HardCodeAuth)
 
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, "OK")
@@ -36,7 +37,7 @@ func main() {
 	handler.InitRoutes(e)
 
 	go func() {
-		if err := e.Start(config.Port); err != nil && err != http.ErrServerClosed { // Start server
+		if err := e.Start(conf.Port); err != nil && err != http.ErrServerClosed { // Start server
 			e.Logger.Fatal("shutting down the server")
 		}
 	}()
