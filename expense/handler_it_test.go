@@ -4,6 +4,7 @@ package expense_test
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -30,10 +31,9 @@ func setUp() (config.Config, func()) {
 	fmt.Println("setUp")
 	conf := config.New()
 	database, close := expense.InitDB(conf)
-	handler := expense.NewHandler(database)
 	e := echo.New()
 
-	go startServer(e, conf, handler)
+	go startServer(e, conf, database)
 	checkServerReadiness(conf)
 
 	return conf, func() {
@@ -49,10 +49,9 @@ func setUpNoDB() (config.Config, func()) {
 	conf := config.New()
 	database, close := expense.InitDB(conf)
 	defer close() //close DB after every thing is set
-	handler := expense.NewHandler(database)
 	e := echo.New()
 
-	go startServer(e, conf, handler)
+	go startServer(e, conf, database)
 	checkServerReadiness(conf)
 
 	return conf, func() {
@@ -63,14 +62,14 @@ func setUpNoDB() (config.Config, func()) {
 	}
 }
 
-func startServer(e *echo.Echo, conf config.Config, handler expense.Handler) {
+func startServer(e *echo.Echo, conf config.Config, database *sql.DB) {
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, "OK")
 	})
 
 	g := e.Group("")
 	g.Use(config.HardCodeAuth)
-	handler.InitRoutes(g)
+	expense.NewHandler(database, g)
 
 	e.Start(conf.Port)
 }

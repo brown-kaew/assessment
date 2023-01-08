@@ -10,7 +10,6 @@ import (
 )
 
 type Handler interface {
-	InitRoutes(e *echo.Group)
 	CreateNewExpense(expense *Expense) error
 	GetExpenseById(id int) (*Expense, error)
 	UpdateExpenseById(expense *Expense) error
@@ -21,13 +20,15 @@ type handler struct {
 	db *sql.DB
 }
 
-func NewHandler(db *sql.DB) Handler {
-	return &handler{
+func NewHandler(db *sql.DB, g *echo.Group) Handler {
+	handler := &handler{
 		db: db,
 	}
+	handler.initRoutes(g)
+	return handler
 }
 
-func (h *handler) InitRoutes(g *echo.Group) {
+func (h *handler) initRoutes(g *echo.Group) {
 	g.POST("/expenses", h.createNewExpenseHandler())
 	g.GET("/expenses/:id", h.getExpenseHandler())
 	g.PUT("/expenses/:id", h.updateExpenseHandler())

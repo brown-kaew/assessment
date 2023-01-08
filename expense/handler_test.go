@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/labstack/echo/v4"
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 )
@@ -23,6 +24,7 @@ func setUp(t *testing.T) (*sql.DB, sqlmock.Sqlmock, func()) {
 func TestCreateNewExpense(t *testing.T) {
 	db, mock, teardown := setUp(t)
 	defer teardown()
+	handler := NewHandler(db, echo.New().Group(""))
 
 	// Arrange
 	expectId := 1
@@ -33,7 +35,6 @@ func TestCreateNewExpense(t *testing.T) {
 		Note:   "night market promotion discount 10 bath",
 		Tags:   []string{"food", "beverage"},
 	}
-	handler := NewHandler(db)
 
 	// Act
 	err := handler.CreateNewExpense(e)
@@ -52,13 +53,13 @@ func TestCreateNewExpense(t *testing.T) {
 func TestGetExpenseById(t *testing.T) {
 	db, mock, teardown := setUp(t)
 	defer teardown()
+	handler := NewHandler(db, echo.New().Group(""))
 
 	// Arrange
 	expectId := 1
 	mock.ExpectPrepare("SELECT \\* FROM expenses.*").ExpectQuery().WithArgs(expectId).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "title", "amount", "note", "tags"}).
 			AddRow(expectId, "strawberry smoothie", "79", "night market promotion discount 10 bath", `{"food","beverage"}`))
-	handler := NewHandler(db)
 
 	// Act
 	e, err := handler.GetExpenseById(expectId)
@@ -77,6 +78,7 @@ func TestGetExpenseById(t *testing.T) {
 func TestUpdateExpenseById(t *testing.T) {
 	db, mock, teardown := setUp(t)
 	defer teardown()
+	handler := NewHandler(db, echo.New().Group(""))
 
 	// Arrange
 	expectId := 1
@@ -90,7 +92,6 @@ func TestUpdateExpenseById(t *testing.T) {
 	mock.ExpectPrepare("UPDATE expenses.*").ExpectExec().
 		WithArgs(expectId, e.Title, e.Amount, e.Note, pq.Array(&e.Tags)).
 		WillReturnResult(driver.RowsAffected(1))
-	handler := NewHandler(db)
 
 	// Act
 	err := handler.UpdateExpenseById(e)
@@ -109,13 +110,13 @@ func TestUpdateExpenseById(t *testing.T) {
 func TestGetAllExpenses(t *testing.T) {
 	db, mock, teardown := setUp(t)
 	defer teardown()
+	handler := NewHandler(db, echo.New().Group(""))
 
 	// Arrange
 	mock.ExpectPrepare("SELECT \\* FROM expenses.*").ExpectQuery().
 		WillReturnRows(sqlmock.NewRows([]string{"id", "title", "amount", "note", "tags"}).
 			AddRow("1", "strawberry smoothie", "79", "night market promotion discount 10 bath", `{"food","beverage"}`).
 			AddRow("2", "MaMa", "5", "No money", `{"food"}`))
-	handler := NewHandler(db)
 
 	// Act
 	expenses, err := handler.GetAllExpenses()

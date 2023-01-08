@@ -19,9 +19,8 @@ import (
 func main() {
 	banner()
 	conf := config.New()
-	database, close := expense.InitDB(conf)
-	defer close()
-	handler := expense.NewHandler(database)
+	database, closeDB := expense.InitDB(conf)
+	defer closeDB()
 
 	e := echo.New()
 	e.HideBanner = true
@@ -32,9 +31,10 @@ func main() {
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, "OK")
 	})
+
 	g := e.Group("")
 	g.Use(config.HardCodeAuth)
-	handler.InitRoutes(g)
+	expense.NewHandler(database, g)
 
 	go func() {
 		if err := e.Start(conf.Port); err != nil && err != http.ErrServerClosed { // Start server
